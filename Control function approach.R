@@ -129,7 +129,7 @@ Log.likelihood <- function(x){
   return(-1 * answer)
 }
 # Optimisation procedure with starting values at true parameter values.
-MLE <- optim(c(0 , alpha.1 , alpha.2 , Variance.W , Covariance.W.V) , Log.likelihood)$par
+MLE <- optim(c(0 , alpha.1 , alpha.2 , Variance.W , Covariance.W.V) , Log.likelihood)
 print(MLE)
 # ----------
 # Single Equation Instrumental Variable method.
@@ -202,8 +202,8 @@ print(MLE)
              else {FALSE})
                 }
 # Computation using the MLE results as starting values.
-  a.0 <- MLE[1]
-  a.1 <- MLE[2]
+  a.0 <- MLE$par[1]
+  a.1 <- MLE$par[2]
   Result <- Output(Organiser(Distribution))
 # If the MLE results are estimated to be in the identified set then break
 # the loop and search for other values in the set. If the MLE results are
@@ -219,8 +219,8 @@ if(Result == TRUE)
 
 Nested.engine <- function(r){
   
-  h <- MLE[1] + r * cos(theta*pi/180)
-  v <- MLE[2] + r * sin(theta*pi/180)
+  h <- MLE$par[1] + r * cos(theta*pi/180)
+  v <- MLE$par[2] + r * sin(theta*pi/180)
   
   q <- Organiser(Distribution)
   
@@ -240,21 +240,21 @@ Nested.engine <- function(r){
   return(q)
 }
 
-
-
-
-k<-0
-incremental.distance <- 0.01
-j <- incremental.distance
+theta <- 0
+k <- 0
 Out.r <- vector(length = 360)
 Out.theta <- vector(length = 360)
-for(i in seq(0,359,1)){
-  theta <- i
-  while(Output(Nested.engine(j)) == T){
-    k <- k+1
-    print(c(k,i,j))
-    Out.r[k] <- j
-    Out.theta[k] <- i
-    j <- j + incremental.distance
+Out.function <- vector(length = 360)
+repeat{
+  theta <- theta + 1
+  r <- 0
+  while(Output(Nested.engine(r)) == T){
+    k <- k + 1
+    r <- r + 0.001
+    Out.r[k] <- r
+    Out.theta[k] <- theta
+    Out.function[k] <- Output(Nested.engine(r))
+    print(c(k,theta))
   }
-}
+if(theta >= 360)
+  break}
