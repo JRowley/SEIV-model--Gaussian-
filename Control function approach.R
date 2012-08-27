@@ -219,32 +219,32 @@ if(Result == TRUE)
 
 Nested.engine <- function(r){
   
-  h <- MLE$par[1] + r * cos(theta*pi/180)
-  v <- MLE$par[2] + r * sin(theta*pi/180)
+  h <- MLE$par[1] + r * sin(theta*pi/180)
+  v <- MLE$par[2] + r * cos(theta*pi/180)
   
-  q <- Organiser(Distribution)
+  Workhorse <- Sample(Distribution)
   
-  Par.L <- vector(length = nrow(q)) 
-  Par.U <- vector(length = nrow(q))
-  for(i in seq(1,nrow(q),1)){
-    Par.L[i] <- C[match(q$Y[i] , Y)] - h - v*q$X[i]
-    Par.U[i] <- C[match(q$Y[i] , Y) + 1] - h - v*q$X[i]
+    Par.L <- vector(length = nrow(Workhorse)) 
+  Par.U <- vector(length = nrow(Workhorse))
+  for(i in seq(1,nrow(Workhorse),1)){
+    Par.L[i] <- C[match(Workhorse$Y[i] , Y)] - h - v*Workhorse$X[i]
+    Par.U[i] <- C[match(Workhorse$Y[i] , Y) + 1] - h - v*Workhorse$X[i]
   }
   
-  q$Par.L <- Par.L
-  q$Par.U <- Par.U
+  Workhorse$Par.L <- Par.L
+  Workhorse$Par.U <- Par.U
   
-  q <- transform(q , Par.L=pnorm(Par.L))
-  q <- transform(q , Par.U=pnorm(Par.U))
+  Workhorse <- transform(Workhorse , Par.L=pnorm(Par.L))
+  Workhorse <- transform(Workhorse , Par.U=pnorm(Par.U))
   
-  cum.Pr <- vector(length = nrow(q))
-  for(i in seq(1,nrow(q),1)){
-    cum.Pr[i] <- sum(q[q$Z[i] == q$Z & q$X[i] == q$X & q$Y[i] >= q$Y , "Pr"])
+  cum.Pr <- vector(length = nrow(Workhorse))
+  for(i in seq(1,nrow(Workhorse),1)){
+    cum.Pr[i] <- sum(Workhorse[Workhorse$Z[i] == Workhorse$Z & Workhorse$X[i] == Workhorse$X & Workhorse$Y[i] >= Workhorse$Y , "Pr"])
   }
   
-  q$cum.Pr <- cum.Pr
+  Workhorse$cum.Pr <- cum.Pr
   
-  return(q)
+  return(Workhorse)
 }
 
 theta <- 0
@@ -252,19 +252,23 @@ k <- 0
 Out.r <- vector(length = 360)
 Out.theta <- vector(length = 360)
 Out.function <- vector(length = 360)
+r.increment <- 0.01
+theta.increment <- 1
 repeat{
-  theta <- theta + 1
-  r <- 0
+  theta <- theta + theta.increment
+  r <- r.increment
   while(Output(Nested.engine(r)) == T){
     k <- k + 1
-    r <- r + 0.1
+    Out.r[k] <- r
+    Out.function[k] <- Output(Nested.engine(r))
+    r <- r + r.increment
     Out.r[k] <- r
     Out.theta[k] <- theta
-    Out.function[k] <- Output(Nested.engine(r))
     print(c(k,theta))
   }
 if(theta >= 360)
-  break}
+  break
+}
 
 Out <- data.frame(Out.r , Out.theta)
 colnames(Out) <- c("r" , "theta")
@@ -272,3 +276,13 @@ Out$a.0 <- MLE$par[1] + Out$r * sin(Out$theta * pi / 180)
 Out$a.1 <- MLE$par[2] + Out$r * cos(Out$theta * pi / 180) 
 Out$Logical <- Out.function
 rm(list=c("Out.r" , "Out.theta" , "Out.function"))
+
+library(ggplot2)
+p <- ggplot(Out , aes(x = a.0 , y = a.1))
+p + geom_point(alpha = 0.5)
+
+Hull.problem <- chull(Out$a.0 , Out$a.1)
+Hull.problem <- append(Hull.problem , Hull.problem[1])
+Hull <- Out[Hull.problem , c("a.0" , "a.1")]
+h <- ggplot(Hull , aes(x = a.0 , y = a.1))
+h + geom_polygon(alpha = 0.5) + geom_point(aes(x = MLE$par[1] , y = MLE$par[2]) , colour = "white")
