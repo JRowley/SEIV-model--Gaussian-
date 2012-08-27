@@ -237,6 +237,13 @@ Nested.engine <- function(r){
   q <- transform(q , Par.L=pnorm(Par.L))
   q <- transform(q , Par.U=pnorm(Par.U))
   
+  cum.Pr <- vector(length = nrow(q))
+  for(i in seq(1,nrow(q),1)){
+    cum.Pr[i] <- sum(q[q$Z[i] == q$Z & q$X[i] == q$X & q$Y[i] >= q$Y , "Pr"])
+  }
+  
+  q$cum.Pr <- cum.Pr
+  
   return(q)
 }
 
@@ -250,7 +257,7 @@ repeat{
   r <- 0
   while(Output(Nested.engine(r)) == T){
     k <- k + 1
-    r <- r + 0.001
+    r <- r + 0.1
     Out.r[k] <- r
     Out.theta[k] <- theta
     Out.function[k] <- Output(Nested.engine(r))
@@ -258,3 +265,10 @@ repeat{
   }
 if(theta >= 360)
   break}
+
+Out <- data.frame(Out.r , Out.theta)
+colnames(Out) <- c("r" , "theta")
+Out$a.0 <- MLE$par[1] + Out$r * sin(Out$theta * pi / 180)
+Out$a.1 <- MLE$par[2] + Out$r * cos(Out$theta * pi / 180) 
+Out$Logical <- Out.function
+rm(list=c("Out.r" , "Out.theta" , "Out.function"))
