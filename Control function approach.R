@@ -129,7 +129,7 @@ Log.likelihood <- function(x){
   return(-1 * answer)
 }
 # Optimisation procedure with starting values at true parameter values.
-MLE <- optim(c(0 , alpha.1 , alpha.2 , Variance.W , Covariance.W.V) , Log.likelihood)
+MLE <- optim(c(0 , alpha.1 , alpha.2 , Variance.W , Covariance.W.V) , Log.likelihood , hessian = TRUE)
 print(MLE)
 # ----------
 # Single Equation Instrumental Variable method.
@@ -252,11 +252,11 @@ k <- 0
 Out.r <- vector(length = 360)
 Out.theta <- vector(length = 360)
 Out.function <- vector(length = 360)
-r.increment <- 0.01
+r.increment <- 0.001
 theta.increment <- 1
 repeat{
   theta <- theta + theta.increment
-  r <- r.increment
+  r <- 0
   while(Output(Nested.engine(r)) == T){
     k <- k + 1
     Out.r[k] <- r
